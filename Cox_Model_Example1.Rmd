@@ -1,0 +1,102 @@
+---
+title: "Cox_Model_example1"
+author: "Rachel"
+date: "5/18/2022"
+output: github_document
+---
+
+#Two R packages: 1. 'survival' for computing survival analyses; 2. 'survminer' for visualizing survival analysis results 
+
+#Load the packages 
+```{r}
+library("survival")
+library("survminer")
+```
+
+#Example
+
+##1. data: 
+```{r}
+data("lung")
+head(lung)
+```
+
+##2. Compute the cox model: fit the Cox regression using covariates: age, sex, ph.ecog and wt.loss. 
+
+    ##2.1 Univariate Cox regression: 
+    
+```{r}
+res.cox = coxph(Surv(time, status) ~ sex, data = lung)
+res.cox
+```
+    
+```{r}
+summary(res.cox)
+```
+
+##To apply the univariate coxph function to multiple covariates at once, type this:
+```{r}
+covariates = c("age", "sex", "ph.karno", "ph.ecog", "wt.loss")
+univ_formulas = sapply(covariates, 
+                       function(x) as.formula(paste('Surv(time, status)~', x)))
+
+univ_models = lapply(univ_formulas, function(x){coxph(x, data = lung)})
+
+#Extract data: 
+
+univ_results = lapply(univ_models, function(x){
+                                      x = summary(x)
+                                      p.value = signif(x$wald["pvalue"], digits = 2)
+                                      wald.test = signif(x$wald["test"], digits = 2)
+                                      beta = signif(x$coef[1], digits = 2); #coeficient beta
+                                      HR = signif(x$coef[2], digits = 2); #exp(beta)
+                                      HR.confint.lower = signif(x$conf.int[, "lower .95"], 2)
+                                      HR.confint.upper = signif(x$conf.int[, "upper .95"], 2)
+                                      HR = paste0(HR, "(", 
+                                                  HR.confint.lower, "-", HR.confint.upper,")")
+                                      res = c(beta, HR, wald.test, p.value)
+                                      names(res) = c("beta", "HR(95% CI for HR)", "wald.test", "p.value")
+                                      return(res)
+                                        ##returen(exp(cbind(coef(x), confint(X))))
+})
+
+res = t(as.data.frame(univ_results, check.names = FALSE))
+as.data.frame(res)
+```
+
+
+##Multivariate Cox regression analysis 
+```{r}
+res.cox = coxph(Surv(time, status) ~ age + sex + ph.ecog, data = lung)
+summary(res.cox)
+```
+
+##Visualizing the estimated distribution of survival times 
+    #Plot the baseline survival function 
+```{r}
+ggsurvplot(survfit(res.cox), data = lung, palette = "#2E9FDF",
+          ggtheme = theme_minimal())
+```
+
+
+#Create the new data
+```{r}
+sex_df = with(lung, data.frame(sex = c(1,2),
+                               age = rep(mean(age, na.rm = TRUE), 2),
+                               ph.ecog = c(1,1)
+                               )
+              )
+sex_df
+
+```
+
+##Survival Curves
+```{r}
+fit = survfit(res.cox, newdata = sex_df)
+ggsurvplot(data = lung, fit, conf.int = TRUE, legend.labs = c("Sex = 1", "Sex = 2"),
+           ggtheme = theme_minimal())
+```
+
+
+
+
