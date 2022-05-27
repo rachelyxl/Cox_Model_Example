@@ -1,0 +1,139 @@
+---
+title: "survival analysis"
+author: "Rachel"
+date: "5/26/2022"
+output: html_document
+---
+
+
+```{r}
+library("survival")
+library("survminer")
+```
+
+```{r}
+data("lung")
+head(lung)
+```
+
+```{r}
+fit = survfit(Surv(time, status) ~ sex, data = lung)
+print(fit)
+```
+
+```{r}
+summary(fit)
+summary(fit)$table
+```
+
+```{r}
+d = data.frame(time = fit$time, 
+               n.risk = fit$n.risk,
+               n.event = fit$n.event,
+               n.censor = fit$n.censor,
+               surv = fit$surv,
+               upper = fit$upper,
+               lower = fit$lower
+               )
+head(d)
+```
+```{r}
+ggsurvplot(fit, 
+           pval = TRUE, conf.int = TRUE,
+           risk.table = TRUE, 
+           risk.table.col = "strata", 
+           linetype = "strata",
+           surv.median.line = "hv",
+           ggtheme = theme_bw(),
+           palette = c("#E7B800", "#2E9FDF"))
+```
+
+```{r}
+ggsurvplot(
+  fit,
+  pval = TRUE,
+  conf.int = TRUE,
+  conf.int.style = "step",
+  xlab = "time in days",
+  break.time.by = 200,
+  ggtheme = theme_light(),
+  risk.table = "abs_pct",
+  risk.table.y.text.col = T,
+  risk.table.y.text = FALSE,
+  ncensor.plot = TRUE,
+  surv.median.line = "hv",
+  legend.labs = c("Male", "Female"),
+  palette = c("#E7B800", "#2E9FDF")
+)
+
+```
+
+```{r}
+summary(fit)$table
+```
+
+```{r}
+ggsurvplot(fit,
+           conf.int = TRUE,
+           risk.table.col = "strata",
+           ggtheme = theme_bw(),
+           palette = c("#E7B800", "#2E9FDF"),
+           xlim = c(0, 600))
+```
+
+```{r}
+ggsurvplot(fit,
+           conf.int = TRUE,
+           risk.table.col = "strata",
+           ggtheme = theme_bw(),
+           palette = c("#E7B800", "#2E9FDF"),
+           fun = "event")
+```
+
+```{r}
+res.sum = surv_summary(fit)
+head(res.sum)
+```
+
+```{r}
+attr(res.sum, "table")
+```
+
+```{r}
+surv_diff = survdiff(Surv(time, status) ~ sex, data = lung)
+surv_diff
+```
+
+
+```{r}
+fit2 = survfit(Surv(time, status) ~ sex + rx + adhere, data = colon)
+```
+
+```{r}
+ggsurv = ggsurvplot(fit2, 
+                    fun = "event", 
+                    conf.int = TRUE,
+                    ggtheme = theme_bw())
+
+ggsurv$plot + theme_bw() + 
+  theme(legend.position = "right") + facet_grid(rx ~ adhere)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

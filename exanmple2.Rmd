@@ -1,0 +1,327 @@
+---
+title: "Cox_example2"
+author: "Rachel"
+date: "5/19/2022"
+output: github_document
+---
+
+```{r}
+rm(list = ls())
+library(survival)
+```
+
+```{r}
+uis = read.table("https://stats.idre.ucla.edu/stat/r/examples/asa/uis.csv", sep=",", header = TRUE)
+attach(uis)
+```
+
+##1.variable hercoc
+```{r}
+hercoc.ph = coxph(Surv(time, censor) ~ factor(hercoc), method = "breslow")
+summary(hercoc.ph)
+```
+
+```{r}
+survfit(Surv(time, censor) ~ hercoc, uis)
+
+```
+
+##2.Variable ivhx
+```{r}
+detach()
+```
+
+```{r}
+ivhx.ph = coxph(Surv(time, censor) ~ factor(ivhx), data = uis, method = "breslow")
+summary(ivhx.ph)
+```
+
+```{r}
+survfit(Surv(time, censor) ~ ivhx, uis)
+```
+
+
+##3. variable race
+```{r}
+race.ph = coxph(Surv(time, censor) ~ factor(race), data = uis, method = "breslow")
+summary(race.ph)
+```
+
+```{r}
+stci.hl(50, uis, subset = race == 0)
+stci.hl(50, uis, subset = race == 1)
+```
+
+##4. variable treat
+```{r}
+treat.ph = coxph(Surv(time, censor) ~ factor(treat), uis, method = "breslow")
+summary(treat.ph)
+```
+
+```{r}
+survfit(Surv(time, censor) ~ treat, uis)
+```
+
+##5. variable site
+```{r}
+site.ph = coxph(Surv(time, censor) ~ factor(site), uis, method = "breslow")
+summary(site.ph)
+```
+
+```{r}
+survfit(Surv(time, censor) ~ site, uis)
+```
+
+
+##6. Variable age
+```{r}
+uis$agecat = cut(uis$age, c(19, 27, 32, 37, 56))
+```
+
+```{r}
+agecat.ph = coxph(Surv(time, censor) ~ agecat, uis, method = "breslow")
+summary(agecat.ph)
+```
+
+```{r}
+survfit(Surv(time, censor) ~ agecat, uis)
+
+```
+
+##7.Variable becktoa: 
+```{r}
+uis$beckt2 = cut(uis$becktota, c(-.5, 9.99, 14.9, 24.9, 55))
+beckcat.ph = coxph(Surv(time, censor) ~ beckt2, uis, method = "breslow")
+summary(beckcat.ph)
+```
+
+```{r}
+survfit(Surv(time, censor) ~ beckt2, uis, na.action = na.exclude)
+```
+
+
+##8. Variable ndurgtx
+```{r}
+uis$drugcat = cut(uis$ndrugtx, c(-.5, 1, 3, 6, 70))
+drugcat.ph = coxph(Surv(time, censor) ~ drugcat, uis, method = "breslow")
+summary(drugcat.ph)
+```
+
+```{r}
+survfit(Surv(time, censor) ~ drugcat, uis, na.action = na.exclude)
+```
+
+
+```{r}
+uis$age5 = uis$age/5
+uis$beck10 = uis$becktota/10
+uis$drug5 = uis$ndrugtx/5
+
+age5.ph = coxph(Surv(time, censor) ~ age5, uis, method = "breslow")
+summary(age5.ph)
+
+beck10.ph = coxph(Surv(time, censor) ~ beck10, uis, method = "breslow")
+summary(beck10.ph)
+
+drug5.ph = coxph(Surv(time, censor) ~ drug5, uis, method = "breslow")
+summary(drug5.ph)
+```
+
+
+```{r}
+full.ph = coxph(Surv(time, censor) ~ age + becktota + ndrugtx + factor(hercoc) + factor(ivhx) + race + treat + site, uis, method = "breslow")
+summary(full.ph)
+```
+
+```{r}
+reduced1.ph = coxph(Surv(time, censor) ~ age + becktota + ndrugtx + factor(ivhx) + race + treat + site, uis, method = "breslow")
+summary(reduced1.ph)
+```
+
+
+```{r}
+uis$ivhx3 = (uis$ivhx ==3)
+reduced2.ph = coxph(Surv(time, censor) ~ age + becktota + ndrugtx + ivhx3 + race + treat + site, uis, method = "breslow")
+summary(reduced2.ph)
+```
+
+```{r}
+uis$agecat = cut(uis$age, c(19, 27, 32, 37, 56))
+agecat.ph = coxph(Surv(time, censor) ~ agecat + becktota + ndrugtx + ivhx3 + site + race + treat, uis, method="breslow")
+summary(agecat.ph)
+```
+
+```{r}
+uis$beckcat = cut(uis$becktota, c(-.5, 9.99, 14.9, 24.9, 55))
+beckcat.ph = coxph(Surv(time, censor) ~ age + beckcat + ndrugtx + ivhx3 + site + race + treat, uis, method = "breslow")
+summary(beckcat.ph)
+```
+
+```{r}
+uis$drugcat = cut(ndrugtx, c(-.5, 1, 3, 6, 70))
+drugcat.ph = coxph(Surv(time, censor) ~ age + becktota + drugcat + ivhx3 + site + race + treat, uis, method = "breslow")
+summary(drugcat.ph)
+```
+
+```{r}
+names(agecat.ph)
+```
+
+```{r}
+agecat.ph$coefficients
+```
+
+```{r}
+age.coeff = data.frame(agecat.ph$coefficients)[1:3,]
+age.plot = cbind(midpt = c(24, 30.5, 35.5, 47.5), rbind(0, data.frame(age.coeff)))
+age.plot
+
+plot(age.plot[,1], age.plot[,2], ylab = "log Hazard", xlab = "Age", type = "b")
+```
+
+```{r}
+beckcat.ph$coefficients
+```
+
+```{r}
+beck.coeff = data.frame(beckcat.ph$coefficients)[2:4,]
+beck.plot = cbind(midpt = c(5, 12.5, 20, 40), rbind(0, data.frame(beck.coeff)))
+plot(beck.plot[,1], beck.plot[,2], ylab = "Log Hazard", xlab = "Becktota", type = "b")
+```
+
+```{r}
+drugcat.ph$coefficients
+
+drug.coeff = data.frame(drugcat.ph$coefficients)[3:5,]
+drug.plot = cbind(midpt = c(.5, 2.5, 5.0, 23.5), rbind(0, data.frame(drug.coeff)))
+
+plot(drug.plot[,1], drug.plot[,2], ylab = "log hazard", xlab = "ndrugtx", type = "b")
+```
+```{r}
+rm(list = ls())
+library(survival)
+library(mfp)
+```
+
+
+```{r}
+uis<-read.table("https://stats.idre.ucla.edu/stat/r/examples/asa/uis.csv", sep=",", header = TRUE)
+
+uis$ivhx3 = (uis$ivhx==3)
+
+uis$nx = 10/(uis$ndrugtx+1)
+attach(uis)
+
+uis$ok = complete.cases(uis$age, uis$becktota, uis$nx, uis$ivhx3, uis$site, uis$race, uis$treat)
+to.uis = uis
+```
+
+
+##not in the model
+```{r}
+a.ph = coxph(Surv(time, censor) ~ age + becktota + ivhx3 + site + race + treat, 
+                                  to.uis, method="breslow")
+
+2*a.ph$loglik
+```
+
+##linear term
+```{r}
+alin = coxph(Surv(time, censor) ~ ndrugtx +  age+ becktota + ivhx3 + site + race + treat, 
+                                  to.uis, method="breslow")
+2*alin$loglik
+```
+
+##J=1 (2df)
+```{r}
+a2<- mfp(Surv(time, censor) ~fp(nx, df=2) +  age+ becktota + ivhx3 + site + race + treat, 
+                             family = cox, data = to.uis)
+a2$dev
+
+a2$powers
+```
+
+##J=2 (4df)
+```{r}
+a4<- mfp(Surv(time, censor) ~fp(nx, df=4) +  age+ becktota + ivhx3 + site + race + treat, 
+                             family = cox, data = to.uis)
+
+a4$powers
+
+a4$dev
+
+names(a4)
+head(a4$x)
+```
+
+
+```{r}
+y = a4$x[,2] * (-0.52360) + a4$x[,3] * 0.19505
+f51.d = cbind(x=to.uis$ndrugtx, y)
+f51.d = f51.d[order(f51.d$x),]
+par(cex=.8)
+plot(f51.d$x, f51.d$y, type="l", xlab="NDRUGTX", ylab="Log Hazard")
+```
+
+```{r}
+detach(uis)
+attach(to.uis)
+age.ph = coxph( Surv(time, censor) ~ becktota + ndrugtx + ivhx3 
+                + race + treat + site, to.uis, method="breslow")
+to.uis$resid = residuals(age.ph, type="martingale", data=to.uis)
+plot(to.uis$age, to.uis$resid, xlab="Age",ylab="Martingale Residuals")
+lines(lowess(to.uis$age, to.uis$resid))
+```
+
+
+```{r}
+becktota.ph <- coxph( Surv(time, censor) ~ age + ndrugtx + 
+  ivhx3 + race + treat + site,  uis, method="breslow", na.action=na.exclude)
+uis$resid <- residuals(becktota.ph, type="martingale")
+plot(uis$becktota, uis$resid, xlab="Becktota",ylab="Martingale Residuals", ylim=c(-4, 1.0))
+lines(lowess(uis$becktota[!is.na(uis$becktota) & !is.na(uis$resid)], 
+      uis$resid[!is.na(uis$becktota) & !is.na(uis$resid)]))
+```
+
+
+```{r}
+ndrugtx.ph 
+```
+
+```{r}
+uis$ndrugfp1 <- 1/((uis$ndrugtx+1)/10)
+uis$ndrugfp2 <- (1/((uis$ndrugtx+1)/10))*log((uis$ndrugtx+1)/10)
+
+```
+
+```{r}
+reduced3.ph <- coxph( Surv(time, censor)~ age + becktota + ndrugfp1 + ndrugfp2 +
+   ivhx3 + race + treat + site, uis, method="breslow", na.action=na.exclude)
+summary(reduced3.ph)
+
+<output omitted>
+```
+
+```{r}
+uis$agesite <- uis$age*uis$site
+uis$racesite <- uis$race*uis$site
+uis$agefp1 <- uis$age*uis$ndrugfp1
+uis$agefp2 <- uis$age*uis$ndrugfp2
+```
+
+```{r}
+interaction.ph <- coxph(formula=Surv(time, censor) ~ age + becktota + + ndrugfp1 + ndrugfp2 + 
+   ivhx3 + race + treat + site + agesite + racesite + agefp1 + agefp2,
+   data=uis, method="breslow", na.action=na.exclude)
+summary(interaction.ph)
+```
+
+
+```{r}
+reducedinter.ph <- coxph(formula=Surv(time, censor) ~ age + becktota + + ndrugfp1 + ndrugfp2 +
+ ivhx3 + race + treat + site + agesite + racesite, uis, method="breslow", na.action=na.exclude)
+summary(reducedinter.ph)
+```
+
+
+
